@@ -93,10 +93,10 @@ class Map:
                     next_station.add_train(id, train)
                     route[current_pos].remove_train(id, train)
             turn += 1
-            time.sleep(0.1)
+            time.sleep(0.2)
         print("===========================================")
         print()
-        print("Total turn = " + str(turn))
+        print("Total turn = " + str(turn - 1))
 
     def append_line(self, line):
         self.map.append(line)
@@ -197,9 +197,10 @@ class Map:
         self.metro_run_train()
 
 def main():
-    m = Map('file')
-    m.bfs()
-    routes = m.routes
+    while True:
+        m = Map('file')
+        m.bfs()
+        routes = m.routes
     # for i, route in enumerate(routes):
     #     print("Route " + str(i+1) + ":")
     #     print("\033[1;30m => \033[0;0m".join(station.name for station in route))
