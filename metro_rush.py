@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import collections
 from sys import stderr
+import time
 
 
 class Station:
@@ -8,21 +9,22 @@ class Station:
         self.id = id
         self.name = name
         self.neighbor = []
+        self.trains = collections.deque()
 
     def add_neighbor(self, neighbor_info):
         self.neighbor.append(neighbor_info)
 
-    def add_train(self, train):
-        pass
+    def add_train(self, id, train):
+        self.trains.append((id, train))
+
+    def remove_train(self, id, train):
+        self.trains.remove((id, train))
 
 
 class Line:
     def __init__(self, name):
         self.name = name
         self.stations = []
-
-    def append_city(self, station):
-        self.stations.append(station)
 
 
 class Train:
@@ -37,6 +39,7 @@ class Train:
 
 class Map:
     def __init__(self, file_name):
+        self.routes = []
         self.map = []
         self.file_name = file_name
         self.head_hue = ''
@@ -47,11 +50,53 @@ class Map:
         self.station_names = {}
         self.start = ''
         self.end = ''
+        self.trains = []
 
         content = self.read_file(self.file_name)
         self.create_map(content)
         self.find_neighbor(content)
         self.find_start_and_end()
+        self.metro_add_trains()
+
+    def metro_add_trains(self):
+        for i in range(int(self.total_trains)):
+            train = Train(i+1, self.start)
+            self.trains.append((i+1, train))
+            self.start.add_train(i+1, train)
+
+    def metro_run_train(self):
+        turn = 1
+        turn_start = True
+        turn_end = False
+        route = self.routes[0]
+        home = set()
+
+        route_name = [i.name for i in route]
+        tmp = " => ".join(route_name)
+        while len(route[-1].trains) != int(self.total_trains):
+            print("Turn: " + str(turn) + " Route: (" + tmp + ")")
+            for station in route:
+                print(station.name)
+                for id, train in station.trains:
+                    print(train.name, end=" ")
+                print()
+            for id, train in self.trains:
+                if id in home:
+                    continue
+                current_pos = route.index(train.current_station)
+                if route[current_pos] == route[-1]:
+                    home.add(id)
+                    continue
+                next_station = route[current_pos + 1]
+                if next_station == route[-1] or len(next_station.trains) == 0:
+                    train.move_to(next_station)
+                    next_station.add_train(id, train)
+                    route[current_pos].remove_train(id, train)
+            turn += 1
+            time.sleep(0.1)
+        print("===========================================")
+        print()
+        print("Total turn = " + str(turn))
 
     def append_line(self, line):
         self.map.append(line)
@@ -67,20 +112,14 @@ class Map:
             exit(1)
 
     def create_map(self, content):
-        # m = Map()
         for i in content:
             if i.startswith('#'):
                 line = Line(i[1:])
-            elif i[:1].isdigit():
-                if ":Conn:" not in i:
-                    id, name = i.split(":", 1)
-                    station = Station(id,name.strip())
-                    line.stations.append(station)
-                else:
-                    id, name, _, _= i.split(":")
-                    station = Station(id,name.strip())
-                    line.stations.append(station)
                 self.append_line(line)
+            elif i[:1].isdigit():
+                id_name = i.split(":")
+                station = Station(id_name[0], id_name[1].strip())
+                line.stations.append(station)
             elif "=" in i:
                 if "START" in i:
                     line_start, position = i.split()
@@ -133,8 +172,8 @@ class Map:
                    and self.map[i].stations[j].id == self.tail_pos):
                     self.end = self.map[i].stations[j]
 
-    def bfs(self):
-        routes = []
+    def find_route_bfs(self):
+        self.routes = []
         queue = collections.deque([[self.start]])
         seen = set()
         seen.add(self.start.name)
@@ -145,21 +184,30 @@ class Map:
                     seen.remove(self.end.name)
                 except KeyError:
                     pass
-                routes.append(path)
+                self.routes.append(path)
                 continue
             for nearby in self.station_names[path[-1].name]:
                 if nearby.name not in seen:
                     queue.append(path + [nearby])
                     seen.add(nearby.name)
-        return routes
+        return self.routes
 
+    def bfs(self):
+        self.find_route_bfs()
+        self.metro_run_train()
 
 def main():
     m = Map('file')
-    routes = m.bfs()
-    for i, route in enumerate(routes):
-        print("Route " + str(i+1) + ":")
-        print("\033[1;30m => \033[0;0m".join(station.name for station in route))
+    m.bfs()
+    routes = m.routes
+    # for i, route in enumerate(routes):
+    #     print("Route " + str(i+1) + ":")
+    #     print("\033[1;30m => \033[0;0m".join(station.name for station in route))
+
+    # for line in m.map:
+        # print("\033[4;31m" + line.name + ":" + "\033[0m")
+        # for station in line.stations:
+        #     print(station.name)
 
 
 if __name__ == '__main__':
