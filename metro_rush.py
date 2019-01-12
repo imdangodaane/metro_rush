@@ -148,7 +148,7 @@ class Map:
             if count == int(self.total_trains):
                 keep_running = False
             turn += 1
-            time.sleep(0.01)
+            time.sleep(0.15)
         print()
         print("\033[1;1mTotal turn = " + str(turn))
         print()
