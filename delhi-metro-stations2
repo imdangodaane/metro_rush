@@ -189,6 +189,6 @@
 17:South Extension
 18:Lajpat Nagar:Conn: Violet Line
 
-START=Red Line:15
-END=Blue Line:36
-TRAINS=100
+START=Pink Line:2
+END=Violet Line:12
+TRAINS=50

@@ -190,5 +190,5 @@
 18:Lajpat Nagar:Conn: Violet Line
 
 START=Red Line:15
-END=Blue Line:36
-TRAINS=100
+END=Red Line:20
+TRAINS=30
